@@ -16,12 +16,8 @@ export const TableRow: React.FC<TableRowProps> = ({
   unmappedColumns = [],
   columnMappings = {}
 }) => {
-  const isUnmappedColumn = (column: string) => {
-    return column.startsWith('unmappedColumn');
-  };
-
-  const isDefaultColumn = (column: string) => {
-    return columnMappings[column] === 'Default';
+  const isGrayedOut = (column: string) => {
+    return column.startsWith('unmappedColumn') || columnMappings[column] === 'Default';
   };
 
   return (
@@ -29,8 +25,7 @@ export const TableRow: React.FC<TableRowProps> = ({
       {data.map((row, rowIndex) => (
         <tr key={rowIndex}>
           {columns.map((column) => {
-            const isUnmapped = isUnmappedColumn(column);
-            const isDefault = isDefaultColumn(column);
+            const isGrayed = isGrayedOut(column);
             
             return (
               <td key={column} className="px-2 py-2 whitespace-nowrap">
@@ -39,11 +34,9 @@ export const TableRow: React.FC<TableRowProps> = ({
                   value={row[column]}
                   onChange={(e) => onCellChange(rowIndex, column, e.target.value)}
                   className={`w-full min-w-[120px] p-2 text-sm border rounded-md
-                    ${isUnmapped || isDefault
-                      ? 'bg-gray-50 text-gray-400 border-gray-200' 
-                      : 'border-gray-300'} 
+                    ${isGrayed ? 'bg-gray-50 text-gray-400 border-gray-200' : 'border-gray-300'} 
                     focus:ring-[#E31E24] focus:border-[#E31E24]`}
-                  disabled={isUnmapped || isDefault}
+                  disabled={isGrayed}
                 />
               </td>
             );
