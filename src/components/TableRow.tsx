@@ -28,26 +28,26 @@ export const TableRow: React.FC<TableRowProps> = ({
     <tbody className="bg-white divide-y divide-gray-200">
       {data.map((row, rowIndex) => (
         <tr key={rowIndex}>
-          {columns.map((column) => (
-            <td 
-              key={column} 
-              className={`px-2 py-2 whitespace-nowrap ${
-                isUnmappedColumn(column) ? 'bg-gray-700' : 
-                isDefaultColumn(column) ? 'bg-gray-700' : ''
-              }`}
-            >
-              <input
-                type="text"
-                value={row[column]}
-                onChange={(e) => onCellChange(rowIndex, column, e.target.value)}
-                className={`w-full min-w-[120px] p-2 text-sm border rounded-md
-                  ${isUnmappedColumn(column) || isDefaultColumn(column)
-                    ? 'bg-gray-100 text-gray-400 border-gray-300' 
-                    : 'border-gray-300'} 
-                  focus:ring-[#E31E24] focus:border-[#E31E24]`}
-              />
-            </td>
-          ))}
+          {columns.map((column) => {
+            const isUnmapped = isUnmappedColumn(column);
+            const isDefault = isDefaultColumn(column);
+            
+            return (
+              <td key={column} className="px-2 py-2 whitespace-nowrap">
+                <input
+                  type="text"
+                  value={row[column]}
+                  onChange={(e) => onCellChange(rowIndex, column, e.target.value)}
+                  className={`w-full min-w-[120px] p-2 text-sm border rounded-md
+                    ${isUnmapped || isDefault
+                      ? 'bg-gray-50 text-gray-400 border-gray-200' 
+                      : 'border-gray-300'} 
+                    focus:ring-[#E31E24] focus:border-[#E31E24]`}
+                  disabled={isUnmapped || isDefault}
+                />
+              </td>
+            );
+          })}
         </tr>
       ))}
     </tbody>
