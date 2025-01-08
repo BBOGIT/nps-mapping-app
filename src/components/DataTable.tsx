@@ -85,7 +85,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   return (
     <div className="w-full px-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Крок {step}</h2>
+        <h2 className="text-xl font-semibold">Step {step}</h2>
         <button
           onClick={step === 1 ? onBack : () => setStep(1)}
           className="px-4 py-2 text-[#E31E24] border border-[#E31E24] rounded-md hover:bg-red-50 transition-colors"
