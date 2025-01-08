@@ -15,45 +15,27 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
   onColumnMapping,
   columnMappings
 }) => {
-  // Отримуємо значення колонки, враховуючи як маппінг, так і початкове значення
+  // Отримуємо поточне значення для колонки
   const getCurrentValue = (column: string) => {
     return columnMappings[column] || column;
   };
 
-  // Функція для перевірки, чи використовується значення в інших колонках
-  const isValueUsedInOtherColumns = (value: string, currentColumn: string) => {
-    // Перевіряємо як маппінги, так і початкові значення колонок
-    return columns.some(col => {
-      const colValue = getCurrentValue(col);
-      return colValue === value && col !== currentColumn;
-    });
-  };
+  // Функція для отримання списку опцій для селектора
+  const getSelectOptions = (currentColumn: string) => {
+    const currentValue = getCurrentValue(currentColumn);
+    
+    // Створюємо список опцій, виключаючи поточне значення
+    const options = [
+      // Додаємо оригінальну назву колонки, тільки якщо вона не є поточним значенням
+      ...(currentColumn !== currentValue ? [currentColumn] : []),
+      // Завжди додаємо Default
+      'Default',
+      // Додаємо всі інші опції з emptyFields, крім поточного значення
+      ...emptyFields.filter(field => field !== currentValue)
+    ];
 
-  // Оновлена функція обробки зміни значення
-  const handleColumnChange = (changedColumn: string, newValue: string) => {
-    // Створюємо нову копію маппінгу для оновлення
-    const updatedMappings = { ...columnMappings };
-
-    if (newValue !== 'Default') {
-      // Перевіряємо всі колонки (не тільки ті, що в маппінгу)
-      columns.forEach(column => {
-        const currentValue = getCurrentValue(column);
-        
-        // Якщо знаходимо співпадіння значення в іншій колонці
-        if (currentValue === newValue && column !== changedColumn) {
-          // Встановлюємо Default для цієї колонки
-          updatedMappings[column] = 'Default';
-        }
-      });
-    }
-
-    // Встановлюємо нове значення для зміненої колонки
-    updatedMappings[changedColumn] = newValue;
-
-    // Застосовуємо всі зміни
-    Object.entries(updatedMappings).forEach(([column, value]) => {
-      onColumnMapping(column, value);
-    });
+    // Видаляємо можливі дублікати
+    return Array.from(new Set(options));
   };
 
   const getHeaderStyle = (column: string) => {
@@ -64,11 +46,31 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
       ${isSpecialColumn ? 'text-gray-700' : 'text-gray-500'}`;
   };
 
+  const handleColumnChange = (changedColumn: string, newValue: string) => {
+    const updatedMappings = { ...columnMappings };
+
+    if (newValue !== 'Default') {
+      columns.forEach(column => {
+        const currentValue = getCurrentValue(column);
+        if (currentValue === newValue && column !== changedColumn) {
+          updatedMappings[column] = 'Default';
+        }
+      });
+    }
+
+    updatedMappings[changedColumn] = newValue;
+    
+    Object.entries(updatedMappings).forEach(([column, value]) => {
+      onColumnMapping(column, value);
+    });
+  };
+
   return (
     <thead className="bg-gray-50">
       <tr>
         {columns.map((column) => {
           const currentValue = getCurrentValue(column);
+          const options = getSelectOptions(column);
           
           return (
             <th key={column} className="px-2 py-3 text-left">
@@ -77,9 +79,13 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                 value={currentValue}
                 onChange={(e) => handleColumnChange(column, e.target.value)}
               >
-                <option value={column}>{column}</option>
-                {emptyFields.map((field) => (
-                  <option key={field} value={field}>{field}</option>
+                {/* Показуємо поточне значення першим */}
+                <option value={currentValue}>{currentValue}</option>
+                {/* Показуємо інші доступні опції */}
+                {options.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
                 ))}
               </select>
             </th>
