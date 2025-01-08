@@ -15,7 +15,13 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
   onColumnMapping,
   columnMappings
 }) => {
-  const unmappedColumnName = Object.keys(unmappedColumns[0] || {})[0];
+  const isUnmappedColumn = (column: string) => {
+    return column.startsWith('unmappedColumn');
+  };
+
+  const isDefaultColumn = (column: string) => {
+    return columnMappings[column] === 'Default';
+  };
 
   return (
     <thead className="bg-gray-50">
@@ -24,13 +30,13 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
           <th 
             key={column} 
             className={`px-2 py-3 text-left text-xs font-medium tracking-wider ${
-              column === unmappedColumnName ? 'bg-gray-700' : ''
+              isUnmappedColumn(column) || isDefaultColumn(column) ? 'bg-gray-700' : ''
             }`}
           >
             <div className="flex items-center space-x-2">
               <select 
                 className={`text-xs font-medium uppercase bg-transparent border-none focus:ring-0 cursor-pointer ${
-                  column === unmappedColumnName ? 'text-white' : 'text-gray-500'
+                  isUnmappedColumn(column) || isDefaultColumn(column) ? 'text-white' : 'text-gray-500'
                 }`}
                 value={columnMappings[column] || column}
                 onChange={(e) => onColumnMapping(column, e.target.value)}
