@@ -17,6 +17,14 @@ export const FileUpload: React.FC = () => {
   const [message, setMessage] = useState('');
   const [tableData, setTableData] = useState<ApiResponse>({ data: [] });
 
+  const handleTemplateChange = (value: TemplateType) => {
+    setTemplate(value);
+    if (value !== 'other') {
+      setMessage('Функціонал в розробці');
+      setTimeout(() => setMessage(''), 3000);
+    }
+  };
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -58,7 +66,7 @@ export const FileUpload: React.FC = () => {
   if (showTable) {
     return (
       <DataTable 
-        onSave={handleReset} 
+        onBack={handleReset}
         initialData={tableData.data}
         unmappedColumns={tableData.unmappedColumns}
         emptyFields={tableData.emptyFields}
@@ -75,7 +83,7 @@ export const FileUpload: React.FC = () => {
           </label>
           <select
             value={template}
-            onChange={(e) => setTemplate(e.target.value as TemplateType)}
+            onChange={(e) => handleTemplateChange(e.target.value as TemplateType)}
             className="w-full p-2 border border-gray-300 rounded-md focus:ring-[#E31E24] focus:border-[#E31E24]"
           >
             <option value="shopify">Shopify</option>

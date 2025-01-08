@@ -9,12 +9,14 @@ interface DataTableProps {
   initialData: TableData[];
   unmappedColumns?: Array<Record<string, string>>;
   emptyFields?: string[];
+  onBack: () => void;
 }
 
 export const DataTable: React.FC<DataTableProps> = ({ 
   initialData,
   unmappedColumns = [],
-  emptyFields = []
+  emptyFields = [],
+  onBack
 }) => {
   const [data, setData] = useState<TableData[]>(initialData);
   const [loading, setLoading] = useState(false);
@@ -36,7 +38,6 @@ export const DataTable: React.FC<DataTableProps> = ({
     setColumnMappings(prev => {
       const newMappings = { ...prev };
       
-      // If this value was previously selected for another column, set that column to 'Default'
       Object.keys(newMappings).forEach(key => {
         if (newMappings[key] === value && key !== column) {
           newMappings[key] = 'Default';
@@ -49,18 +50,24 @@ export const DataTable: React.FC<DataTableProps> = ({
   };
 
   const handleNext = () => {
-    // Filter out columns with 'Default' value
-    const filteredData = data.map(row => {
-      const newRow: Record<string, string> = {};
-      Object.entries(row).forEach(([key, value]) => {
-        if (columnMappings[key] !== 'Default') {
-          newRow[key] = value;
-        }
+    setLoading(true);
+    setTimeout(() => {
+      const filteredData = data.map(row => {
+        const newRow: Record<string, string> = {};
+        Object.entries(row).forEach(([key, value]) => {
+          if (
+            columnMappings[key] !== 'Default' && 
+            !key.startsWith('unmappedColumn')
+          ) {
+            newRow[key] = value;
+          }
+        });
+        return newRow;
       });
-      return newRow;
-    });
-    setData(filteredData);
-    setStep(2);
+      setData(filteredData);
+      setStep(2);
+      setLoading(false);
+    }, 1000);
   };
 
   if (loading) {
@@ -77,7 +84,15 @@ export const DataTable: React.FC<DataTableProps> = ({
 
   return (
     <div className="w-full px-4">
-      <h2 className="text-xl font-semibold mb-4">Крок {step}</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Крок {step}</h2>
+        <button
+          onClick={step === 1 ? onBack : () => setStep(1)}
+          className="px-4 py-2 text-[#E31E24] border border-[#E31E24] rounded-md hover:bg-red-50 transition-colors"
+        >
+          Back
+        </button>
+      </div>
       
       {step === 1 ? (
         <>
