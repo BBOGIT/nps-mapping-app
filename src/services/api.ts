@@ -19,10 +19,10 @@ export const processFile = async (formData: FormData): Promise<ApiResponse> => {
 };
 
 export const saveData = async (data: TableData[]): Promise<ApiResponse> => {
-  const response = await fetch(import.meta.env.VITE_API_URL, {
+  const response = await fetch(`${import.meta.env.VITE_API_URL}/save`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ data, type: 'save' }),
+    body: JSON.stringify({ data }),
   });
   
   if (!response.ok) {
@@ -33,10 +33,10 @@ export const saveData = async (data: TableData[]): Promise<ApiResponse> => {
 };
 
 export const saveTemplate = async (data: TableData[]): Promise<ApiResponse> => {
-  const response = await fetch(import.meta.env.VITE_API_URL, {
+  const response = await fetch(`${import.meta.env.VITE_API_URL}/save/templates`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ data, type: 'template' }),
+    body: JSON.stringify({ data }),
   });
   
   if (!response.ok) {
