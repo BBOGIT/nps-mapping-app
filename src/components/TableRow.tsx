@@ -1,3 +1,4 @@
+// TableRow.tsx
 import React from 'react';
 import { TableData } from '../types';
 
@@ -13,11 +14,22 @@ export const TableRow: React.FC<TableRowProps> = ({
   data, 
   columns, 
   onCellChange, 
-  unmappedColumns = [],
   columnMappings = {}
 }) => {
-  const isGrayedOut = (column: string) => {
+  // Функція для визначення, чи має бути комірка сірою
+  const isGrayCell = (column: string) => {
     return column.startsWith('unmappedColumn') || columnMappings[column] === 'Default';
+  };
+
+  // Функція для отримання стилів комірки
+  const getCellStyle = (column: string) => {
+    const isGray = isGrayCell(column);
+    
+    return {
+      backgroundColor: isGray ? '#F9FAFB' : '#FFFFFF',
+      color: isGray ? '#9CA3AF' : '#111827',
+      borderColor: isGray ? '#E5E7EB' : '#D1D5D9'
+    };
   };
 
   return (
@@ -25,18 +37,20 @@ export const TableRow: React.FC<TableRowProps> = ({
       {data.map((row, rowIndex) => (
         <tr key={rowIndex}>
           {columns.map((column) => {
-            const isGrayed = isGrayedOut(column);
+            const isGray = isGrayCell(column);
+            const cellStyle = getCellStyle(column);
             
             return (
               <td key={column} className="px-2 py-2 whitespace-nowrap">
                 <input
                   type="text"
-                  value={row[column]}
+                  value={row[column] || ''}
                   onChange={(e) => onCellChange(rowIndex, column, e.target.value)}
+                  style={cellStyle}
                   className={`w-full min-w-[120px] p-2 text-sm border rounded-md
-                    ${isGrayed ? 'bg-gray-50 text-gray-400 border-gray-200' : 'border-gray-300'} 
+                    ${isGray ? 'bg-gray-50' : 'bg-white'}
                     focus:ring-[#E31E24] focus:border-[#E31E24]`}
-                  disabled={isGrayed}
+                  disabled={isGray}
                 />
               </td>
             );
@@ -45,4 +59,4 @@ export const TableRow: React.FC<TableRowProps> = ({
       ))}
     </tbody>
   );
-}
+};
