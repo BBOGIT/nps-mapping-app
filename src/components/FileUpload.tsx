@@ -12,7 +12,7 @@ interface ApiResponse {
 
 export const FileUpload: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [template, setTemplate] = useState<TemplateType>('shopify');
+  const [template, setTemplate] = useState<TemplateType>('other');
   const [showTable, setShowTable] = useState(false);
   const [message, setMessage] = useState('');
   const [tableData, setTableData] = useState<ApiResponse>({ data: [] });
@@ -61,7 +61,7 @@ export const FileUpload: React.FC = () => {
 
   const handleReset = () => {
     setSelectedFile(null);
-    setTemplate('shopify');
+    setTemplate('other');
     setShowTable(false);
     setMessage('');
     setTableData({ data: [] });
@@ -91,9 +91,9 @@ export const FileUpload: React.FC = () => {
               handleTemplateChange(e.target.value as TemplateType)
             }
             className='w-full p-2 border border-gray-300 rounded-md focus:ring-[#E31E24] focus:border-[#E31E24]'>
-            <option value='other'>Other</option>
             <option value='shopify'>Shopify</option>
             <option value='amazon'>Amazon</option>
+            <option value='other'>Other</option>
           </select>
         </div>
 
