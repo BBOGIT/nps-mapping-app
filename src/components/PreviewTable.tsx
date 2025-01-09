@@ -1,6 +1,8 @@
-import React from 'react';
+// components/PreviewTable.tsx
+import React, { useState } from 'react';
 import { TableData } from '../types';
 import { saveData, saveTemplate } from '../services/api';
+import { Modal } from './Modal';
 
 interface PreviewTableProps {
   data: TableData[];
@@ -8,14 +10,20 @@ interface PreviewTableProps {
   setLoading: (loading: boolean) => void;
 }
 
-export const PreviewTable: React.FC<PreviewTableProps> = ({ data, setMessage, setLoading }) => {
+export const PreviewTable: React.FC<PreviewTableProps> = ({ 
+  data, 
+  setMessage, 
+  setLoading 
+}) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [templateName, setTemplateName] = useState('');
   const columns = Object.keys(data[0]);
 
   const handleSave = async () => {
     try {
       setLoading(true);
       const response = await saveData(data);
-      setMessage(response.message || 'Data saved successfully!');
+      setMessage(response.message);
     } catch (error) {
       setMessage('Error saving data');
     } finally {
@@ -24,15 +32,27 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({ data, setMessage, se
   };
 
   const handleSaveTemplate = async () => {
+    if (!templateName.trim()) {
+      setMessage('Please enter template name');
+      return;
+    }
+
     try {
       setLoading(true);
-      const response = await saveTemplate(data);
-      setMessage(response.message || 'Template saved successfully!');
+      const response = await saveTemplate(data, templateName);
+      setMessage(response.message);
+      setIsModalOpen(false);
+      setTemplateName('');
     } catch (error) {
       setMessage('Error saving template');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setTemplateName('');
   };
 
   return (
@@ -70,12 +90,48 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({ data, setMessage, se
           Save
         </button>
         <button
-          onClick={handleSaveTemplate}
+          onClick={() => setIsModalOpen(true)}
           className="px-4 py-2 bg-[#E31E24] text-white rounded-md hover:bg-[#C41A1F] transition-colors"
         >
           Save as Template
         </button>
       </div>
+
+      <Modal isOpen={isModalOpen} onClose={handleModalClose}>
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-gray-900">
+            Save as Template
+          </h2>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Template Name
+            </label>
+            <input
+              type="text"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#E31E24] focus:border-[#E31E24]"
+              placeholder="Enter template name"
+            />
+          </div>
+
+          <div className="flex space-x-3 pt-4">
+            <button
+              onClick={handleSaveTemplate}
+              className="flex-1 px-4 py-2 bg-[#E31E24] text-white rounded-md hover:bg-[#C41A1F] transition-colors"
+            >
+              Save
+            </button>
+            <button
+              onClick={handleModalClose}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

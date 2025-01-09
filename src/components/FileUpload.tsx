@@ -91,9 +91,9 @@ export const FileUpload: React.FC = () => {
               handleTemplateChange(e.target.value as TemplateType)
             }
             className='w-full p-2 border border-gray-300 rounded-md focus:ring-[#E31E24] focus:border-[#E31E24]'>
+            <option value='other'>Other</option>
             <option value='shopify'>Shopify</option>
             <option value='amazon'>Amazon</option>
-            <option value='other'>Other</option>
           </select>
         </div>
 
