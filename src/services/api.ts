@@ -6,6 +6,39 @@ interface ApiResponse {
   contentType: string;
 }
 
+// Timeout duration in milliseconds (e.g., 5 minutes)
+const TIMEOUT_DURATION = 5 * 60 * 1000;
+
+// Helper function to create a timeout promise
+const timeout = (ms: number) => {
+  return new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Request timeout')), ms)
+  );
+};
+
+const fetchWithTimeout = async (url: string, options: RequestInit) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_DURATION);
+
+  try {
+    const response = await Promise.race([
+      fetch(url, {
+        ...options,
+        signal: controller.signal
+      }),
+      timeout(TIMEOUT_DURATION)
+    ]);
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('Request timed out after ' + TIMEOUT_DURATION / 1000 + ' seconds');
+    }
+    throw error;
+  }
+};
+
 export const processFile = async (formData: FormData): Promise<ApiResponse> => {
   const response = await fetch(import.meta.env.VITE_API_URL, {
     method: 'POST',
@@ -20,7 +53,7 @@ export const processFile = async (formData: FormData): Promise<ApiResponse> => {
 };
 
 export const saveData = async (data: TableData[]): Promise<ApiResponse> => {
-  const response = await fetch(`${import.meta.env.VITE_API_URL}/save`, {
+  const response = await fetchWithTimeout(`${import.meta.env.VITE_API_URL}/save`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ data }),
