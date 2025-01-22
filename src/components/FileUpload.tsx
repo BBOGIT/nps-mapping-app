@@ -30,7 +30,7 @@ export const FileUpload: React.FC = () => {
     const file = event.target.files?.[0];
     if (file) {
       const fileExt = file.name.split('.').pop()?.toLowerCase();
-      if (fileExt === 'xlsx' || fileExt === 'csv') {
+      if (fileExt === 'xlsx' || fileExt === 'csv' || fileExt === 'xls') {
         setSelectedFile(file);
         setMessage('');
       } else {
