@@ -4,6 +4,7 @@ import { saveData, saveTemplate } from '../services/api';
 import { Modal } from './Modal';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ScrollToTop from './ScrollToTop';
+import { SuccessPage, ErrorPage } from './ResultPages';
 
 interface PreviewTableProps {
   data: TableData[];
@@ -11,38 +12,32 @@ interface PreviewTableProps {
   setLoading: (loading: boolean) => void;
 }
 
+type Status = 'preview' | 'success' | 'error';
+
 export const PreviewTable: React.FC<PreviewTableProps> = ({ 
   data, 
   setMessage, 
   setLoading 
 }) => {
+  const [status, setStatus] = useState<Status>('preview');
+  const [resultMessage, setResultMessage] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [templateName, setTemplateName] = useState('');
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  const columns = Object.keys(data[0]);
 
-  // Функція для горизонтальної прокрутки
-  const scroll = (direction: 'left' | 'right') => {
-    if (tableContainerRef.current) {
-      const scrollAmount = 300;
-      const newScrollLeft = direction === 'left' 
-        ? tableContainerRef.current.scrollLeft - scrollAmount
-        : tableContainerRef.current.scrollLeft + scrollAmount;
-      
-      tableContainerRef.current.scrollTo({
-        left: newScrollLeft,
-        behavior: 'smooth'
-      });
-    }
-  };
+  const columns = Object.keys(data[0]);
 
   const handleSave = async () => {
     try {
       setLoading(true);
       const response = await saveData(data);
-      setMessage(response.message);
+      setResultMessage(response.message);
+      setStatus('success');
     } catch (error) {
-      setMessage('Error saving data');
+      // Припускаємо, що API повертає об'єкт помилки з деталями
+      const errorMessage = error.response?.data?.message || 'Error saving data';
+      setResultMessage(errorMessage);
+      setStatus('error');
     } finally {
       setLoading(false);
     }
@@ -57,23 +52,49 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
     try {
       setLoading(true);
       const response = await saveTemplate(data, templateName);
-      setMessage(response.message);
+      setResultMessage(response.message);
+      setStatus('success');
       setIsModalOpen(false);
-      setTemplateName('');
     } catch (error) {
-      setMessage('Error saving template');
+      const errorMessage = error.response?.data?.message || 'Error saving template';
+      setResultMessage(errorMessage);
+      setStatus('error');
+      setIsModalOpen(false);
     } finally {
       setLoading(false);
+      setTemplateName('');
     }
   };
 
+  // Відображення різних станів компонента
+  if (status === 'success') {
+    return (
+      <SuccessPage 
+        message={resultMessage} 
+        onBack={() => setStatus('preview')} 
+      />
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <ErrorPage 
+        error={resultMessage} 
+        onBack={() => setStatus('preview')} 
+      />
+    );
+  }
+
+  // Основний вміст таблиці перегляду
   return (
     <div>
-      {/* Контейнер таблиці з кнопками прокрутки */}
       <div className="relative mb-6">
-        {/* Кнопка прокрутки вліво */}
         <button
-          onClick={() => scroll('left')}
+          onClick={() => {
+            if (tableContainerRef.current) {
+              tableContainerRef.current.scrollLeft -= 300;
+            }
+          }}
           className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 
             bg-white/90 p-2 rounded-full shadow-lg hover:bg-gray-100 transition-all
             focus:outline-none border border-gray-200"
@@ -81,7 +102,6 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
           <ChevronLeft className="w-6 h-6 text-gray-600" />
         </button>
 
-        {/* Таблиця для перегляду даних */}
         <div className="overflow-hidden bg-white rounded-lg shadow">
           <div 
             ref={tableContainerRef}
@@ -105,10 +125,7 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
                   <tr key={rowIndex} className="hover:bg-gray-50">
                     {columns.map((column) => (
                       <td key={column} className="px-2 py-2 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {/* Просто відображаємо значення, без можливості редагування */}
-                          {row[column]}
-                        </div>
+                        <div className="text-sm text-gray-900">{row[column]}</div>
                       </td>
                     ))}
                   </tr>
@@ -118,9 +135,12 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
           </div>
         </div>
 
-        {/* Кнопка прокрутки вправо */}
         <button
-          onClick={() => scroll('right')}
+          onClick={() => {
+            if (tableContainerRef.current) {
+              tableContainerRef.current.scrollLeft += 300;
+            }
+          }}
           className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 
             bg-white/90 p-2 rounded-full shadow-lg hover:bg-gray-100 transition-all
             focus:outline-none border border-gray-200"
@@ -129,7 +149,6 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
         </button>
       </div>
 
-      {/* Кнопки дій */}
       <div className="flex space-x-4">
         <button
           onClick={handleSave}
@@ -145,7 +164,6 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
         </button>
       </div>
 
-      {/* Модальне вікно для збереження шаблону */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-gray-900">
