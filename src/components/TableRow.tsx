@@ -26,30 +26,51 @@ export const TableRow: React.FC<TableRowProps> = ({
   targetFields,
   unmappedColumns = []
 }) => {
+  // Додаємо логи для дебагу
+  React.useEffect(() => {
+    console.log('TableRow mounted with props:', {
+      dataLength: data.length,
+      columns,
+      targetFields,
+      unmappedColumns
+    });
+  }, [data, columns, targetFields, unmappedColumns]);
+
   // Функція для визначення, чи має бути комірка сірою
   const isGrayCell = (column: string) => {
     return unmappedColumns.includes(column) || columnMappings[column] === 'Default';
   };
 
   // Функція для перевірки значення на відповідність регулярному виразу
-  const isValidValue = (column: string, value: string): boolean => {
+  const isValidValue = React.useCallback((column: string, value: string): boolean => {
     // Якщо значення пусте, повертаємо true (не показуємо помилку)
     if (!value) return true;
+    
+    // Перевіряємо, чи є targetFields
+    if (!targetFields || !Array.isArray(targetFields)) {
+      console.warn('targetFields is missing or not an array');
+      return true;
+    }
 
     const targetField = targetFields.find(field => field.name === column);
-    if (!targetField) return true;
+    if (!targetField) {
+      console.log(`No validation rule found for column: ${column}`);
+      return true;
+    }
 
     try {
       const regex = new RegExp(targetField.validation);
-      return regex.test(value);
+      const result = regex.test(value);
+      console.log(`Validation for ${column}: ${value} -> ${result}`);
+      return result;
     } catch (error) {
       console.error(`Invalid regex for column ${column}:`, error);
       return true;
     }
-  };
+  }, [targetFields]);
 
   // Функція для отримання стилів комірки
-  const getCellStyle = (column: string, value: string) => {
+  const getCellStyle = React.useCallback((column: string, value: string) => {
     const isGray = isGrayCell(column);
     const isValid = isValidValue(column, value);
     
@@ -59,7 +80,12 @@ export const TableRow: React.FC<TableRowProps> = ({
       borderColor: !value ? '#D1D5D9' : (isValid ? '#D1D5D9' : '#E31E24'),
       borderWidth: !value ? '1px' : (isValid ? '1px' : '2px')
     };
-  };
+  }, [isGrayCell, isValidValue]);
+
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    console.warn('No data provided to TableRow');
+    return null;
+  }
 
   return (
     <tbody className="bg-white divide-y divide-gray-200">
