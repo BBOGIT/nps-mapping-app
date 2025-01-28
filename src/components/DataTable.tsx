@@ -10,13 +10,18 @@ interface DataTableProps {
   unmappedColumns?: Array<Record<string, string>>;
   emptyFields?: string[];
   onBack: () => void;
+  targetFields: Array<{
+    name: string;
+    validation: string;
+  }>;
 }
 
 export const DataTable: React.FC<DataTableProps> = ({ 
   initialData,
   unmappedColumns = [],
   emptyFields = [],
-  onBack
+  onBack,
+  targetFields
 }) => {
   const [data, setData] = useState<TableData[]>(initialData);
   const [loading, setLoading] = useState(false);
@@ -114,6 +119,8 @@ export const DataTable: React.FC<DataTableProps> = ({
                   setData(newData);
                 }}
                 unmappedColumns={unmappedColumns}
+                columnMappings={columnMappings}
+                targetFields={targetFields}
               />
             </table>
           </div>

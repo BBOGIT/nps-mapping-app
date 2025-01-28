@@ -8,6 +8,10 @@ interface ApiResponse {
   data: any[];
   unmappedColumns?: Array<Record<string, string>>;
   emptyFields?: string[];
+  targetFields: Array<{
+    name: string;
+    validation: string;
+  }>;
 }
 
 export const FileUpload: React.FC = () => {
@@ -74,6 +78,7 @@ export const FileUpload: React.FC = () => {
         initialData={tableData.data}
         unmappedColumns={tableData.unmappedColumns}
         emptyFields={tableData.emptyFields}
+        targetFields={tableData.targetFields}
       />
     );
   }
