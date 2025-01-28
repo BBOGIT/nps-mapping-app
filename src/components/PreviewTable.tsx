@@ -6,12 +6,14 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ScrollToTop from './ScrollToTop';
 import { SuccessPage, ErrorPage } from './ResultPages';
 
+// Визначаємо типи для пропсів компонента
 interface PreviewTableProps {
   data: TableData[];
   setMessage: (message: string) => void;
   setLoading: (loading: boolean) => void;
 }
 
+// Визначаємо можливі стани компонента
 type Status = 'preview' | 'success' | 'error';
 
 export const PreviewTable: React.FC<PreviewTableProps> = ({ 
@@ -19,23 +21,59 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
   setMessage, 
   setLoading 
 }) => {
+  // Стани компонента
   const [status, setStatus] = useState<Status>('preview');
   const [resultMessage, setResultMessage] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [templateName, setTemplateName] = useState('');
+  
+  // Референція для управління прокруткою таблиці
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
+  // Отримуємо назви колонок з першого рядка даних
   const columns = Object.keys(data[0]);
 
+  // Функція для прокрутки таблиці вліво/вправо
+  const scroll = (direction: 'left' | 'right') => {
+    if (tableContainerRef.current) {
+      const scrollAmount = 300;
+      const newScrollLeft = direction === 'left' 
+        ? tableContainerRef.current.scrollLeft - scrollAmount
+        : tableContainerRef.current.scrollLeft + scrollAmount;
+      
+      tableContainerRef.current.scrollTo({
+        left: newScrollLeft,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // Обробник для збереження даних
   const handleSave = async () => {
     try {
       setLoading(true);
       const response = await saveData(data);
-      setResultMessage(response.message);
-      setStatus('success');
+      console.log('Save response:', response);
+      
+      // Перевіряємо успішність відповіді
+      if (response.success) {
+        setResultMessage(response.message || 'Data saved successfully');
+        setStatus('success');
+      } else {
+        setResultMessage(response.message || 'Failed to save data');
+        setStatus('error');
+      }
     } catch (error) {
-      // Припускаємо, що API повертає об'єкт помилки з деталями
-      const errorMessage = error.response?.data?.message || 'Error saving data';
+      // Детальне логування помилки
+      console.error('Save error:', error);
+      
+      // Отримуємо текст помилки з різних можливих джерел
+      const errorMessage = 
+        error.response?.data?.message ||
+        error.response?.data ||
+        error.message ||
+        'An error occurred while saving data';
+      
       setResultMessage(errorMessage);
       setStatus('error');
     } finally {
@@ -43,71 +81,96 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
     }
   };
 
+  // Обробник для збереження шаблону
   const handleSaveTemplate = async () => {
     if (!templateName.trim()) {
-      setMessage('Please enter template name');
+      setResultMessage('Please enter template name');
+      setStatus('error');
       return;
     }
 
     try {
       setLoading(true);
       const response = await saveTemplate(data, templateName);
-      setResultMessage(response.message);
-      setStatus('success');
-      setIsModalOpen(false);
+      console.log('Template save response:', response);
+      
+      if (response.success) {
+        setResultMessage(response.message || 'Template saved successfully');
+        setStatus('success');
+      } else {
+        setResultMessage(response.message || 'Failed to save template');
+        setStatus('error');
+      }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Error saving template';
+      console.error('Template save error:', error);
+      
+      const errorMessage = 
+        error.response?.data?.message ||
+        error.response?.data ||
+        error.message ||
+        'An error occurred while saving template';
+      
       setResultMessage(errorMessage);
       setStatus('error');
-      setIsModalOpen(false);
     } finally {
       setLoading(false);
+      setIsModalOpen(false);
       setTemplateName('');
     }
   };
 
-  // Відображення різних станів компонента
-  if (status === 'success') {
-    return (
-      <SuccessPage 
-        message={resultMessage} 
-        onBack={() => setStatus('preview')} 
-      />
-    );
-  }
-
+  // Відображаємо сторінку помилки
   if (status === 'error') {
+    console.log('Rendering error page:', resultMessage);
     return (
       <ErrorPage 
-        error={resultMessage} 
-        onBack={() => setStatus('preview')} 
+        error={resultMessage}
+        onBack={() => {
+          setStatus('preview');
+          setResultMessage('');
+        }}
       />
     );
   }
 
-  // Основний вміст таблиці перегляду
+  // Відображаємо сторінку успіху
+  if (status === 'success') {
+    console.log('Rendering success page:', resultMessage);
+    return (
+      <SuccessPage 
+        message={resultMessage}
+        onBack={() => {
+          setStatus('preview');
+          setResultMessage('');
+        }}
+      />
+    );
+  }
+
+  // Основний рендер таблиці
   return (
     <div>
+      {/* Контейнер таблиці з кнопками прокрутки */}
       <div className="relative mb-6">
+        {/* Кнопка прокрутки вліво */}
         <button
-          onClick={() => {
-            if (tableContainerRef.current) {
-              tableContainerRef.current.scrollLeft -= 300;
-            }
-          }}
+          onClick={() => scroll('left')}
           className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 
             bg-white/90 p-2 rounded-full shadow-lg hover:bg-gray-100 transition-all
             focus:outline-none border border-gray-200"
+          aria-label="Scroll left"
         >
           <ChevronLeft className="w-6 h-6 text-gray-600" />
         </button>
 
+        {/* Таблиця для перегляду даних */}
         <div className="overflow-hidden bg-white rounded-lg shadow">
           <div 
             ref={tableContainerRef}
             className="overflow-x-auto max-h-[70vh]"
           >
             <table className="w-full divide-y divide-gray-200">
+              {/* Фіксований заголовок таблиці */}
               <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
                   {columns.map((column) => (
@@ -120,6 +183,7 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
                   ))}
                 </tr>
               </thead>
+              {/* Тіло таблиці */}
               <tbody className="bg-white divide-y divide-gray-200">
                 {data.map((row, rowIndex) => (
                   <tr key={rowIndex} className="hover:bg-gray-50">
@@ -135,20 +199,19 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
           </div>
         </div>
 
+        {/* Кнопка прокрутки вправо */}
         <button
-          onClick={() => {
-            if (tableContainerRef.current) {
-              tableContainerRef.current.scrollLeft += 300;
-            }
-          }}
+          onClick={() => scroll('right')}
           className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 
             bg-white/90 p-2 rounded-full shadow-lg hover:bg-gray-100 transition-all
             focus:outline-none border border-gray-200"
+          aria-label="Scroll right"
         >
           <ChevronRight className="w-6 h-6 text-gray-600" />
         </button>
       </div>
 
+      {/* Кнопки дій */}
       <div className="flex space-x-4">
         <button
           onClick={handleSave}
@@ -164,6 +227,7 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
         </button>
       </div>
 
+      {/* Модальне вікно для збереження шаблону */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-gray-900">
