@@ -82,68 +82,30 @@ export const DataTable: React.FC<DataTableProps> = ({
             <div className="overflow-hidden bg-white rounded-lg shadow">
               <div 
                 ref={tableContainerRef}
-                className="overflow-auto max-h-[70vh] relative"
-                style={{ 
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: '#E5E7EB transparent'
-                }}
+                className="overflow-x-auto max-h-[70vh]"
               >
                 <table className="w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50 sticky top-0 z-50">
-                    <tr>
-                      {columns.map((column) => (
-                        <th 
-                          key={column}
-                          className="px-2 py-3 bg-gray-50"
-                        >
-                          <div className="min-w-[120px]">
-                            <select
-                              value={columnMappings[column] || column}
-                              onChange={(e) => {
-                                setColumnMappings(prev => ({
-                                  ...prev,
-                                  [column]: e.target.value
-                                }))
-                              }}
-                              className="w-full p-2 text-xs font-medium text-gray-500 uppercase bg-transparent border rounded-md focus:ring-[#E31E24] focus:border-[#E31E24]"
-                            >
-                              {['Default', ...emptyFields].map((option) => (
-                                <option key={option} value={option}>
-                                  {option}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {data.map((row, rowIndex) => (
-                      <tr key={rowIndex} className="hover:bg-gray-50">
-                        {columns.map((column) => (
-                          <td key={column} className="px-2 py-2 whitespace-nowrap">
-                            <input
-                              type="text"
-                              value={row[column] || ''}
-                              onChange={(e) => {
-                                const newData = [...data];
-                                newData[rowIndex] = { 
-                                  ...newData[rowIndex], 
-                                  [column]: e.target.value 
-                                };
-                                setData(newData);
-                              }}
-                              disabled={columnMappings[column] === 'Default'}
-                              className={`w-full min-w-[120px] p-2 text-sm border rounded-md 
-                                ${columnMappings[column] === 'Default' ? 'bg-gray-50 text-gray-500' : 'bg-white'}
-                                focus:ring-[#E31E24] focus:border-[#E31E24]`}
-                            />
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
+                  <TableHeader 
+                    columns={columns}
+                    emptyFields={['Default', ...emptyFields]}
+                    unmappedColumns={unmappedColumns}
+                    onColumnMapping={(column, value) => {
+                      setColumnMappings(prev => ({...prev, [column]: value}));
+                    }}
+                    columnMappings={columnMappings}
+                  />
+                  <TableRow 
+                    data={data}
+                    columns={columns}
+                    onCellChange={(rowIndex, column, value) => {
+                      const newData = [...data];
+                      newData[rowIndex] = { ...newData[rowIndex], [column]: value };
+                      setData(newData);
+                    }}
+                    unmappedColumns={unmappedColumns}
+                    columnMappings={columnMappings}
+                    targetFields={targetFields}
+                  />
                 </table>
               </div>
             </div>
