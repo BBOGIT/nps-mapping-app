@@ -94,9 +94,26 @@ export const DataTable: React.FC<DataTableProps> = ({
                       {columns.map((column) => (
                         <th 
                           key={column}
-                          className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap bg-gray-50"
+                          className="px-2 py-3 bg-gray-50"
                         >
-                          {column}
+                          <div className="min-w-[120px]">
+                            <select
+                              value={columnMappings[column] || column}
+                              onChange={(e) => {
+                                setColumnMappings(prev => ({
+                                  ...prev,
+                                  [column]: e.target.value
+                                }))
+                              }}
+                              className="w-full p-2 text-xs font-medium text-gray-500 uppercase bg-transparent border rounded-md focus:ring-[#E31E24] focus:border-[#E31E24]"
+                            >
+                              {['Default', ...emptyFields].map((option) => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </th>
                       ))}
                     </tr>
@@ -117,7 +134,10 @@ export const DataTable: React.FC<DataTableProps> = ({
                                 };
                                 setData(newData);
                               }}
-                              className="w-full p-2 text-sm border rounded-md focus:ring-[#E31E24] focus:border-[#E31E24]"
+                              disabled={columnMappings[column] === 'Default'}
+                              className={`w-full min-w-[120px] p-2 text-sm border rounded-md 
+                                ${columnMappings[column] === 'Default' ? 'bg-gray-50 text-gray-500' : 'bg-white'}
+                                focus:ring-[#E31E24] focus:border-[#E31E24]`}
                             />
                           </td>
                         ))}
