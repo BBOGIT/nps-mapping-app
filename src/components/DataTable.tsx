@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { TableData } from '../types';
 import { TableHeader } from './TableHeader';
 import { TableRow } from './TableRow';
+import StepIndicator from './StepIndicator';
 
 interface DataTableProps {
   initialData: TableData[];
@@ -22,6 +23,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   targetFields
 }) => {
   const [data, setData] = useState<TableData[]>(initialData);
+  const [step, setStep] = useState(1);
   const [columnMappings, setColumnMappings] = useState<Record<string, string>>({});
 
   // Отримуємо валідні колонки, ігноруючи числові
@@ -31,25 +33,19 @@ export const DataTable: React.FC<DataTableProps> = ({
     return allKeys.filter(key => isNaN(Number(key)));
   };
 
-  // Додаємо логування для відстеження стану
-  React.useEffect(() => {
-    console.log('DataTable mounted with:', {
-      dataLength: data.length,
-      targetFieldsLength: targetFields?.length,
-      columns: getValidColumns(data)
-    });
-  }, [data, targetFields]);
-
   if (!data || data.length === 0) return null;
 
   const columns = getValidColumns(data);
+  const totalSteps = 3; // Загальна кількість кроків у процесі
 
   return (
     <div className="w-full px-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Step 1</h2>
+      {/* Індикатор кроків */}
+      <StepIndicator steps={totalSteps} currentStep={step} />
+      
+      <div className="flex justify-end mb-4">
         <button
-          onClick={onBack}
+          onClick={step === 1 ? onBack : () => setStep(prev => prev - 1)}
           className="px-4 py-2 text-[#E31E24] border border-[#E31E24] rounded-md hover:bg-red-50 transition-colors"
         >
           Back
@@ -80,6 +76,18 @@ export const DataTable: React.FC<DataTableProps> = ({
             targetFields={targetFields}
           />
         </table>
+      </div>
+
+      {/* Кнопка Next */}
+      <div className="mt-6 flex justify-end">
+        {step < totalSteps && (
+          <button
+            onClick={() => setStep(prev => prev + 1)}
+            className="px-4 py-2 bg-[#E31E24] text-white rounded-md hover:bg-[#C41A1F] transition-colors"
+          >
+            Next
+          </button>
+        )}
       </div>
     </div>
   );
