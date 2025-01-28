@@ -27,6 +27,34 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [templateName, setTemplateName] = useState('');
   
+  // Функція для отримання зрозумілого повідомлення про помилку
+  const getErrorMessage = (error: any): string => {
+    // Перевіряємо наявність відповіді від API
+    if (error.response) {
+      const status = error.response.status;
+      
+      // Перевіряємо специфічні статуси помилок
+      switch (status) {
+        case 413:
+          return 'The data size is too large. Please reduce the amount of data and try again.';
+        case 400:
+          return error.response.data?.message || 'Invalid data format. Please check your data and try again.';
+        case 401:
+          return 'Authentication failed. Please log in again.';
+        case 403:
+          return 'You don\'t have permission to perform this action.';
+        case 404:
+          return 'The requested resource was not found.';
+        case 500:
+          return 'Server error occurred. Please try again later.';
+        default:
+          return error.response.data?.message || 'An unexpected error occurred.';
+      }
+    }
+
+    // Якщо помилка не пов'язана з відповіддю API
+    return error.message || 'An error occurred while processing your request.';
+  };
   // Референція для управління прокруткою таблиці
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
@@ -53,9 +81,7 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
     try {
       setLoading(true);
       const response = await saveData(data);
-      console.log('Save response:', response);
       
-      // Перевіряємо успішність відповіді
       if (response.success) {
         setResultMessage(response.message || 'Data saved successfully');
         setStatus('success');
@@ -64,17 +90,8 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
         setStatus('error');
       }
     } catch (error) {
-      // Детальне логування помилки
       console.error('Save error:', error);
-      
-      // Отримуємо текст помилки з різних можливих джерел
-      const errorMessage = 
-        error.response?.data?.message ||
-        error.response?.data ||
-        error.message ||
-        'An error occurred while saving data';
-      
-      setResultMessage(errorMessage);
+      setResultMessage(getErrorMessage(error));
       setStatus('error');
     } finally {
       setLoading(false);
@@ -92,7 +109,6 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
     try {
       setLoading(true);
       const response = await saveTemplate(data, templateName);
-      console.log('Template save response:', response);
       
       if (response.success) {
         setResultMessage(response.message || 'Template saved successfully');
@@ -103,14 +119,7 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
       }
     } catch (error) {
       console.error('Template save error:', error);
-      
-      const errorMessage = 
-        error.response?.data?.message ||
-        error.response?.data ||
-        error.message ||
-        'An error occurred while saving template';
-      
-      setResultMessage(errorMessage);
+      setResultMessage(getErrorMessage(error));
       setStatus('error');
     } finally {
       setLoading(false);
