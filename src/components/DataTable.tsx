@@ -1,4 +1,3 @@
-// DataTable.tsx
 import React, { useState } from 'react';
 import { TableData } from '../types';
 import { TableHeader } from './TableHeader';
@@ -9,50 +8,37 @@ interface DataTableProps {
   unmappedColumns?: Array<Record<string, string>>;
   emptyFields?: string[];
   onBack: () => void;
+  targetFields: Array<{
+    name: string;
+    validation: string;
+  }>;
 }
 
 export const DataTable: React.FC<DataTableProps> = ({ 
   initialData,
   unmappedColumns = [],
   emptyFields = [],
-  onBack
+  onBack,
+  targetFields
 }) => {
   const [data, setData] = useState<TableData[]>(initialData);
-  
-  // Додаємо логування для відстеження трансформації даних
-  React.useEffect(() => {
-    console.log('Initial data:', initialData);
-    if (initialData.length > 0) {
-      const sample = initialData[0];
-      console.log('Sample row keys:', Object.keys(sample));
-      
-      // Перевіряємо, чи є числові ключі
-      const hasNumericKeys = Object.keys(sample).some(key => !isNaN(Number(key)));
-      console.log('Has numeric keys:', hasNumericKeys);
-    }
-  }, [initialData]);
+  const [columnMappings, setColumnMappings] = useState<Record<string, string>>({});
 
-  // Отримуємо колонки, ігноруючи числові ключі
+  // Отримуємо валідні колонки, ігноруючи числові
   const getValidColumns = (data: TableData[]): string[] => {
     if (data.length === 0) return [];
-    
     const allKeys = Object.keys(data[0]);
-    // Фільтруємо числові ключі та сортуємо за порядком в API
-    const validKeys = allKeys
-      .filter(key => isNaN(Number(key)))
-      .sort((a, b) => {
-        const order = [
-          "IEW number",
-          "Sender type",
-          "Sender full name",
-          // ... додайте інші поля в потрібному порядку
-        ];
-        return order.indexOf(a) - order.indexOf(b);
-      });
-      
-    console.log('Filtered columns:', validKeys);
-    return validKeys;
+    return allKeys.filter(key => isNaN(Number(key)));
   };
+
+  // Додаємо логування для відстеження стану
+  React.useEffect(() => {
+    console.log('DataTable mounted with:', {
+      dataLength: data.length,
+      targetFieldsLength: targetFields?.length,
+      columns: getValidColumns(data)
+    });
+  }, [data, targetFields]);
 
   if (!data || data.length === 0) return null;
 
@@ -76,8 +62,10 @@ export const DataTable: React.FC<DataTableProps> = ({
             columns={columns}
             emptyFields={['Default', ...emptyFields]}
             unmappedColumns={unmappedColumns}
-            onColumnMapping={() => {}}
-            columnMappings={{}}
+            onColumnMapping={(column, value) => {
+              setColumnMappings(prev => ({...prev, [column]: value}));
+            }}
+            columnMappings={columnMappings}
           />
           <TableRow 
             data={data}
@@ -88,6 +76,8 @@ export const DataTable: React.FC<DataTableProps> = ({
               setData(newData);
             }}
             unmappedColumns={unmappedColumns}
+            columnMappings={columnMappings}
+            targetFields={targetFields}
           />
         </table>
       </div>

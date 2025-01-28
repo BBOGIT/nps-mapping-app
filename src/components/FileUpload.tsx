@@ -78,7 +78,7 @@ export const FileUpload: React.FC = () => {
         initialData={tableData.data}
         unmappedColumns={tableData.unmappedColumns}
         emptyFields={tableData.emptyFields}
-        targetFields={tableData.targetFields}
+        targetFields={tableData.targetFields || []} // Додаємо дефолтне значення
       />
     );
   }
