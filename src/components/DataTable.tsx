@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { TableData } from '../types';
 import { TableHeader } from './TableHeader';
 import { TableRow } from './TableRow';
+import { PreviewTable } from './PreviewTable';
 import StepIndicator from './StepIndicator';
 import ScrollToTop from './ScrollToTop';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -24,17 +25,20 @@ export const DataTable: React.FC<DataTableProps> = ({
   onBack,
   targetFields
 }) => {
+  // Стан для керування даними та кроками
   const [data, setData] = useState<TableData[]>(initialData);
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
   const [columnMappings, setColumnMappings] = useState<Record<string, string>>({});
-  
-  // Посилання на контейнер таблиці для горизонтальної прокрутки
+
+  // Референція для прокрутки таблиці
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
-  // Функція для прокрутки таблиці вліво/вправо
+  // Функція для горизонтальної прокрутки
   const scroll = (direction: 'left' | 'right') => {
     if (tableContainerRef.current) {
-      const scrollAmount = 300; // Кількість пікселів для прокрутки
+      const scrollAmount = 300;
       const newScrollLeft = direction === 'left' 
         ? tableContainerRef.current.scrollLeft - scrollAmount
         : tableContainerRef.current.scrollLeft + scrollAmount;
@@ -46,21 +50,98 @@ export const DataTable: React.FC<DataTableProps> = ({
     }
   };
 
+  // Отримуємо валідні колонки
   const getValidColumns = (data: TableData[]): string[] => {
     if (data.length === 0) return [];
     const allKeys = Object.keys(data[0]);
     return allKeys.filter(key => isNaN(Number(key)));
   };
 
+  // Перевірка наявності даних
   if (!data || data.length === 0) return null;
 
   const columns = getValidColumns(data);
-  const totalSteps = 3;
+  const totalSteps = 2; // Всього у нас 2 кроки: редагування та перегляд
+
+  // Рендеримо різний контент в залежності від поточного кроку
+  const renderStepContent = () => {
+    switch (step) {
+      case 1:
+        // Крок 1: Таблиця для редагування
+        return (
+          <div className="relative">
+            <button
+              onClick={() => scroll('left')}
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 
+                bg-white/90 p-2 rounded-full shadow-lg hover:bg-gray-100 transition-all
+                focus:outline-none border border-gray-200"
+            >
+              <ChevronLeft className="w-6 h-6 text-gray-600" />
+            </button>
+
+            <div className="overflow-hidden bg-white rounded-lg shadow">
+              <div 
+                ref={tableContainerRef}
+                className="overflow-x-auto max-h-[70vh]"
+              >
+                <table className="w-full divide-y divide-gray-200">
+                  <TableHeader 
+                    columns={columns}
+                    emptyFields={['Default', ...emptyFields]}
+                    unmappedColumns={unmappedColumns}
+                    onColumnMapping={(column, value) => {
+                      setColumnMappings(prev => ({...prev, [column]: value}));
+                    }}
+                    columnMappings={columnMappings}
+                  />
+                  <TableRow 
+                    data={data}
+                    columns={columns}
+                    onCellChange={(rowIndex, column, value) => {
+                      const newData = [...data];
+                      newData[rowIndex] = { ...newData[rowIndex], [column]: value };
+                      setData(newData);
+                    }}
+                    unmappedColumns={unmappedColumns}
+                    columnMappings={columnMappings}
+                    targetFields={targetFields}
+                  />
+                </table>
+              </div>
+            </div>
+
+            <button
+              onClick={() => scroll('right')}
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 
+                bg-white/90 p-2 rounded-full shadow-lg hover:bg-gray-100 transition-all
+                focus:outline-none border border-gray-200"
+            >
+              <ChevronRight className="w-6 h-6 text-gray-600" />
+            </button>
+          </div>
+        );
+
+      case 2:
+        // Крок 2: Таблиця перегляду
+        return (
+          <PreviewTable 
+            data={data}
+            setMessage={setMessage}
+            setLoading={setLoading}
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="w-full px-4">
+      {/* Індикатор кроків */}
       <StepIndicator steps={totalSteps} currentStep={step} />
       
+      {/* Кнопка "Назад" */}
       <div className="flex justify-end mb-4">
         <button
           onClick={step === 1 ? onBack : () => setStep(prev => prev - 1)}
@@ -70,68 +151,10 @@ export const DataTable: React.FC<DataTableProps> = ({
         </button>
       </div>
 
-      {/* Контейнер для таблиці з кнопками прокрутки */}
-      <div className="relative">
-        {/* Кнопка прокрутки вліво */}
-        <button
-          onClick={() => scroll('left')}
-          className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 
-            bg-white/90 p-2 rounded-full shadow-lg hover:bg-gray-100 transition-all
-            focus:outline-none border border-gray-200"
-          aria-label="Прокрутити вліво"
-        >
-          <ChevronLeft className="w-6 h-6 text-gray-600" />
-        </button>
+      {/* Контент поточного кроку */}
+      {renderStepContent()}
 
-        {/* Контейнер з фіксованими заголовками та прокруткою */}
-        <div className="relative overflow-x-auto bg-white rounded-lg shadow">
-          <div 
-            ref={tableContainerRef}
-            className="overflow-x-auto max-h-[70vh] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
-          >
-            <table className="w-full divide-y divide-gray-200">
-              {/* Фіксований заголовок */}
-              <thead className="bg-gray-50 sticky top-0 z-10">
-                <tr>
-                  {columns.map(column => (
-                    <th
-                      key={column}
-                      className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      {column}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-
-              <TableRow 
-                data={data}
-                columns={columns}
-                onCellChange={(rowIndex, column, value) => {
-                  const newData = [...data];
-                  newData[rowIndex] = { ...newData[rowIndex], [column]: value };
-                  setData(newData);
-                }}
-                unmappedColumns={unmappedColumns}
-                columnMappings={columnMappings}
-                targetFields={targetFields}
-              />
-            </table>
-          </div>
-        </div>
-
-        {/* Кнопка прокрутки вправо */}
-        <button
-          onClick={() => scroll('right')}
-          className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 
-            bg-white/90 p-2 rounded-full shadow-lg hover:bg-gray-100 transition-all
-            focus:outline-none border border-gray-200"
-          aria-label="Прокрутити вправо"
-        >
-          <ChevronRight className="w-6 h-6 text-gray-600" />
-        </button>
-      </div>
-
+      {/* Кнопка "Далі" */}
       <div className="mt-6 flex justify-end">
         {step < totalSteps && (
           <button
@@ -142,6 +165,13 @@ export const DataTable: React.FC<DataTableProps> = ({
           </button>
         )}
       </div>
+
+      {/* Повідомлення */}
+      {message && (
+        <div className="mt-4 p-4 bg-blue-50 text-blue-700 rounded-md">
+          {message}
+        </div>
+      )}
 
       {/* Кнопка прокрутки вгору */}
       <ScrollToTop />

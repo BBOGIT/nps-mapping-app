@@ -1,8 +1,9 @@
-// components/PreviewTable.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { TableData } from '../types';
 import { saveData, saveTemplate } from '../services/api';
 import { Modal } from './Modal';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import ScrollToTop from './ScrollToTop';
 
 interface PreviewTableProps {
   data: TableData[];
@@ -15,10 +16,32 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
   setMessage, 
   setLoading 
 }) => {
+  // Стани для управління модальним вікном і назвою шаблону
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [templateName, setTemplateName] = useState('');
+  
+  // Референція для контейнера таблиці, щоб керувати горизонтальною прокруткою
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  // Отримуємо колонки з першого рядка даних
   const columns = Object.keys(data[0]);
 
+  // Функція для горизонтальної прокрутки таблиці
+  const scroll = (direction: 'left' | 'right') => {
+    if (tableContainerRef.current) {
+      const scrollAmount = 300;
+      const newScrollLeft = direction === 'left' 
+        ? tableContainerRef.current.scrollLeft - scrollAmount
+        : tableContainerRef.current.scrollLeft + scrollAmount;
+      
+      tableContainerRef.current.scrollTo({
+        left: newScrollLeft,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // Обробник для збереження даних
   const handleSave = async () => {
     try {
       setLoading(true);
@@ -31,6 +54,7 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
     }
   };
 
+  // Обробник для збереження шаблону
   const handleSaveTemplate = async () => {
     if (!templateName.trim()) {
       setMessage('Please enter template name');
@@ -50,6 +74,7 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
     }
   };
 
+  // Обробник для закриття модального вікна
   const handleModalClose = () => {
     setIsModalOpen(false);
     setTemplateName('');
@@ -57,31 +82,68 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
 
   return (
     <div>
-      <div className="overflow-x-auto bg-white rounded-lg shadow mb-6">
-        <table className="w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              {columns.map((column) => (
-                <th key={column} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {column}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {data.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                {columns.map((column) => (
-                  <td key={column} className="px-2 py-2 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{row[column]}</div>
-                  </td>
+      {/* Контейнер таблиці з кнопками прокрутки */}
+      <div className="relative mb-6">
+        {/* Кнопка прокрутки вліво */}
+        <button
+          onClick={() => scroll('left')}
+          className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 
+            bg-white/90 p-2 rounded-full shadow-lg hover:bg-gray-100 transition-all
+            focus:outline-none border border-gray-200"
+          aria-label="Scroll left"
+        >
+          <ChevronLeft className="w-6 h-6 text-gray-600" />
+        </button>
+
+        {/* Контейнер таблиці з фіксованим заголовком */}
+        <div className="overflow-hidden bg-white rounded-lg shadow">
+          <div 
+            ref={tableContainerRef}
+            className="overflow-x-auto max-h-[70vh] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+          >
+            <table className="w-full divide-y divide-gray-200">
+              {/* Фіксований заголовок таблиці */}
+              <thead className="bg-gray-50 sticky top-0 z-10">
+                <tr>
+                  {columns.map((column) => (
+                    <th 
+                      key={column} 
+                      className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                    >
+                      {column}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              {/* Тіло таблиці */}
+              <tbody className="bg-white divide-y divide-gray-200">
+                {data.map((row, rowIndex) => (
+                  <tr key={rowIndex} className="hover:bg-gray-50">
+                    {columns.map((column) => (
+                      <td key={column} className="px-2 py-2 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{row[column]}</div>
+                      </td>
+                    ))}
+                  </tr>
                 ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Кнопка прокрутки вправо */}
+        <button
+          onClick={() => scroll('right')}
+          className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 
+            bg-white/90 p-2 rounded-full shadow-lg hover:bg-gray-100 transition-all
+            focus:outline-none border border-gray-200"
+          aria-label="Scroll right"
+        >
+          <ChevronRight className="w-6 h-6 text-gray-600" />
+        </button>
       </div>
 
+      {/* Кнопки дій */}
       <div className="flex space-x-4">
         <button
           onClick={handleSave}
@@ -97,6 +159,7 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
         </button>
       </div>
 
+      {/* Модальне вікно для збереження шаблону */}
       <Modal isOpen={isModalOpen} onClose={handleModalClose}>
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-gray-900">
@@ -132,6 +195,9 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
           </div>
         </div>
       </Modal>
+
+      {/* Кнопка прокрутки вгору */}
+      <ScrollToTop />
     </div>
   );
 };
