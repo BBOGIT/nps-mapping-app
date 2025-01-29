@@ -82,7 +82,7 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
       setLoading(true);
       const response = await saveData(data);
       
-      if (response.success) {
+      if (response.status && Math.floor(response.status / 100) === 2) {
         setResultMessage(response.message || 'Data saved successfully');
         setStatus('success');
       } else {
@@ -110,7 +110,7 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
       setLoading(true);
       const response = await saveTemplate(data, templateName);
       
-      if (response.success) {
+      if (response.status && Math.floor(response.status / 100) === 2) {
         setResultMessage(response.message || 'Template saved successfully');
         setStatus('success');
       } else {
